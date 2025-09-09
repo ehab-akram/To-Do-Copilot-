@@ -1,0 +1,486 @@
+{
+  "name": "Database",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7ab380a2-a8d3-421c-ab4e-748ea8fb7904",
+              "name": "response",
+              "value": "Unable to perform task. Please try again.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6b8b46a5-a344-4554-9de2-81d7d7eb6fa5",
+      "name": "Try Again",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -96,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "39c2f302-03be-4464-a17a-d7cc481d6d44",
+              "name": "=response",
+              "value": "={{$json.output}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7b0e8ef4-86e1-4c79-a41f-798901443692",
+      "name": "Success",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -96,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1040,
+        96
+      ],
+      "id": "0fad914f-1a9b-455e-8ca4-a8e7984a14bd",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {
+          "maxTokensToSample": 4096,
+          "temperature": 0.1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -816,
+        320
+      ],
+      "id": "3ef65770-eaf7-4ede-bed3-324f03171ffc",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "9w6U4Z3UY3yWKIay",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "=## Overview\nYou are an **Expenses Management Assistant** connected to an Airtable database.  \n- Your job is to manage expense records by creating, retrieving, updating, or deleting entries.  \n- Each record must include:  \n  - **Category** (one of the predefined categories)  \n  - **Date** (format: `DD/MM/YYYY`)  \n  - **Amount** (currency, e.g., `3,456.00`)  \n\n---\n\n## Categories\nValid categories include:  \n- **Personal Care & Wellness** → Self-care activities, grooming, shaving  \n- **Transportation - Fuel** → Gasoline, diesel, vehicle fuel costs  \n- **Gifts & Financial Support** → Money to family, friends, donations, personal loans  \n- **Entertainment & Social** → Dining out, movies, bars, recreational/social activities  \n- **Education & Professional Development** → Courses, certifications, training, skill development  \n- **Vehicle Maintenance** → Repairs, oil changes, tire replacements, automotive maintenance  \n- **Food & Groceries** → Groceries, meals, delivery, daily food expenses  \n- **Tobacco & Smoking** → Cigarettes, vaping products, smoking-related purchases  \n- **Clothing & Accessories** → Apparel, shoes, accessories, wardrobe  \n- **Debt Payments** → Credit card payments, loan installments, debt obligations  \n- **Healthcare & Medical** → Doctor visits, medications, insurance copays, medical treatments  \n\n---\n\n## Tools\n- **Create Record** → Add a new expense record.  \n- **Get Record** → Retrieve expense records.  \n- **Update Record** → Update an existing expense (**requires record ID from `Get Record`**).  \n- **Delete Record** → Delete an existing expense (**requires record ID from `Get Record`**).  \n\n---\n\n## Tool Execution Rules\n- **CREATE RECORD**: Execute create tool → Return success message → STOP\n- **GET RECORD**: Execute get tool → Return retrieved data → STOP  \n- **UPDATE RECORD**: Get record ID first → Update → Return result → STOP\n- **DELETE RECORD**: Get record ID first → Delete → Return result → STOP\n\n**NEVER execute multiple tools in sequence unless the user makes multiple separate requests.**\n---\n\n\n## Final Notes\n- Current date/time: **{{ $now.setZone('Asia/Amman').toFormat(\"yyyy-MM-dd HH:mm:ss\") }}**  \n- Timezone: **Asia/Amman**  \n- Always ensure **Category, Date, and Amount** are valid before creating or updating a record.  \n- After calling a tool, **stop immediately and return the tool’s output**.  \n- Do **not** call another tool unless the user explicitly requests it again.  \n- Keep responses concise and only perform the **necessary action**. \n\n\n## CRITICAL INSTRUCTION\n- Execute **ONLY ONE TOOL** per user request\n- After creating a record, do NOT retrieve it unless explicitly asked\n- After any tool execution, respond with the result and STOP\n- Do NOT chain multiple tool calls automatically\n",
+          "maxIterations": 2,
+          "returnIntermediateSteps": false,
+          "passthroughBinaryImages": false
+        }
+      },
+      "id": "ab58c92b-4175-4336-b04e-6d5a12d433e1",
+      "name": "Database Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        -632,
+        96
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appcLQp4R8OpzDDUh",
+          "mode": "list",
+          "cachedResultName": "Expenses_Database",
+          "cachedResultUrl": "https://airtable.com/appcLQp4R8OpzDDUh"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbla4jvX1XXvA0l2C",
+          "mode": "list",
+          "cachedResultName": "Expenses_Table",
+          "cachedResultUrl": "https://airtable.com/appcLQp4R8OpzDDUh/tbla4jvX1XXvA0l2C"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Amount": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Amount', `The Amount that expense`, 'number') }}",
+            "Category": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Category', `Expenses Category`, 'string') }}",
+            "Date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Date', `Date of the expense `, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Amount",
+              "displayName": "Amount",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Attachments",
+              "displayName": "Attachments",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.1,
+      "position": [
+        -688,
+        320
+      ],
+      "id": "441c5c72-88b0-4021-a6f9-e6a871119d9b",
+      "name": "Create record",
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "22rTzGxlYtjw97Lf",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "deleteRecord",
+        "base": {
+          "__rl": true,
+          "value": "appcLQp4R8OpzDDUh",
+          "mode": "list",
+          "cachedResultName": "Expenses_Database",
+          "cachedResultUrl": "https://airtable.com/appcLQp4R8OpzDDUh"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbla4jvX1XXvA0l2C",
+          "mode": "list",
+          "cachedResultName": "Expenses_Table",
+          "cachedResultUrl": "https://airtable.com/appcLQp4R8OpzDDUh/tbla4jvX1XXvA0l2C"
+        },
+        "id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Record_ID', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.1,
+      "position": [
+        -560,
+        320
+      ],
+      "id": "5103bb11-c896-46a1-8238-f96c3db00cfd",
+      "name": "Delete record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "22rTzGxlYtjw97Lf",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appcLQp4R8OpzDDUh",
+          "mode": "list",
+          "cachedResultName": "Expenses_Database",
+          "cachedResultUrl": "https://airtable.com/appcLQp4R8OpzDDUh"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbla4jvX1XXvA0l2C",
+          "mode": "list",
+          "cachedResultName": "Expenses_Table",
+          "cachedResultUrl": "https://airtable.com/appcLQp4R8OpzDDUh/tbla4jvX1XXvA0l2C"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Amount": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Amount', ``, 'number') }}",
+            "id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('id__using_to_match_', ``, 'string') }}",
+            "Category": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Category', ``, 'string') }}",
+            "Date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Date', ``, 'string') }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Amount",
+              "displayName": "Amount",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Attachments",
+              "displayName": "Attachments",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.1,
+      "position": [
+        -432,
+        320
+      ],
+      "id": "749f5db7-9959-4d13-8045-e1e8201182ce",
+      "name": "Update record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "22rTzGxlYtjw97Lf",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "base": {
+          "__rl": true,
+          "value": "appcLQp4R8OpzDDUh",
+          "mode": "list",
+          "cachedResultName": "Expenses_Database",
+          "cachedResultUrl": "https://airtable.com/appcLQp4R8OpzDDUh"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbla4jvX1XXvA0l2C",
+          "mode": "list",
+          "cachedResultName": "Expenses_Table",
+          "cachedResultUrl": "https://airtable.com/appcLQp4R8OpzDDUh/tbla4jvX1XXvA0l2C"
+        },
+        "id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Record_ID', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.1,
+      "position": [
+        -304,
+        320
+      ],
+      "id": "db3a2298-a5e6-4559-a745-5b72b5dd8af7",
+      "name": "Get record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "22rTzGxlYtjw97Lf",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "query": "I went to the barber and I paid 5 JOD today"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Database Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Database Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Database Agent": {
+      "main": [
+        [
+          {
+            "node": "Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Try Again",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create record": {
+      "ai_tool": [
+        [
+          {
+            "node": "Database Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete record": {
+      "ai_tool": [
+        [
+          {
+            "node": "Database Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update record": {
+      "ai_tool": [
+        [
+          {
+            "node": "Database Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get record": {
+      "ai_tool": [
+        [
+          {
+            "node": "Database Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "344622b7-350a-4ecf-bd75-5935736f6c7b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a58a6fa948a6ca442d3dbc5e49c9b5652ab1032d339aa22745673465fd625012"
+  },
+  "id": "wAX6IWgEBVN3sGEa",
+  "tags": [
+    {
+      "createdAt": "2025-09-02T09:31:55.491Z",
+      "updatedAt": "2025-09-02T09:31:55.491Z",
+      "id": "2IJ5MKk1luQFbjjf",
+      "name": "Personal Assistant"
+    }
+  ]
+}

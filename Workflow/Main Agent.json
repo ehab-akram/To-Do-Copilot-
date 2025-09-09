@@ -1,0 +1,416 @@
+{
+  "name": "Main Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "options": {
+          "systemMessage": "=# System Prompt\n\n## Overview\nYou are the ultimate personal assistant. Your primary responsibility is to **route the user’s request to the correct tool**.  \n- Do **not** write emails yourself.  \n- Do **not** create summaries.  \n- Only decide which tool to call or reply directly if no tool is needed.  \n\n---\n\n## Tools\n- **emailAgent** → Use for any actions related to email (send, reply, read, update, etc.).  \n- **calendarAgent** → Use for any actions related to the calendar (add, update, remove events, etc.).  \n- **ExpensesAgent** → Use for any actions related to the expense and money (creat, update, remove, etc.).  \n\n- **ToDOAgent** → Use for any actions related to the daily tasks (creat, update, remove, etc.).  \n\n---\n\n## Instructions\n1. Analyze the user request carefully.  \n2. Call the appropriate tool (`emailAgent` or `calendarAgent` or `ExpensesAgent` or `ToDOAgent`) if the request matches.  \n3. If the request is a **general conversation** (e.g., greetings like “hi”, “how are you”), respond directly without using a tool.  \n\n---\n\n## Final Reminders\n- Current date/time: **{{ $now.setZone('Asia/Amman').toFormat(\"yyyy-MM-dd HH:mm:ss\") }}**  \n- Timezone: **Asia/Amman**  \n- Stay concise and only take the **necessary routing action**.  \n",
+          "maxIterations": 5,
+          "returnIntermediateSteps": false,
+          "passthroughBinaryImages": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1720,
+        -16
+      ],
+      "id": "8468d189-e431-4a52-9fd1-bd0a28b43211",
+      "name": "Ultimate Assistant"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "f9716699-2f27-450a-91d5-19a455eb53f6",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        864,
+        -16
+      ],
+      "webhookId": "99eab1a0-569d-4f0f-a49e-578a02abfe63",
+      "credentials": {
+        "telegramApi": {
+          "id": "eZaKKoHx4JWPb45A",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fe7ecc99-e1e8-4a5e-bdd6-6fce9757b234",
+              "name": "text",
+              "value": "={{ $json.message.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "374c9f3b-bb8e-4124-8216-7bf959d02127",
+      "name": "Set 'Text'",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1312,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.voice.file_id }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "4e29b7ce-3326-490d-be97-f923872f6e69"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Voice"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "8c844924-b2ed-48b0-935c-c66a8fd0c778",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4be37ce1-4559-4866-93f5-bed7d7965a9e",
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1088,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "26cbd2f4-01ea-429a-9d09-0cdd72deb4db",
+      "name": "Response",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2256,
+        -16
+      ],
+      "webhookId": "682ca5ab-d30c-4ea5-bb25-c2f26206e761",
+      "credentials": {
+        "telegramApi": {
+          "id": "eZaKKoHx4JWPb45A",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {
+          "maxTokensToSample": 4096,
+          "temperature": 0.1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        1536,
+        208
+      ],
+      "id": "4522924f-fabe-4c50-aa01-02d31fca3b80",
+      "name": "Groq Chat Model",
+      "notesInFlow": false,
+      "credentials": {
+        "groqApi": {
+          "id": "9w6U4Z3UY3yWKIay",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "emailAgent",
+        "description": "Call this tool for any email actions. such as send, retrieve, summary",
+        "workflowId": {
+          "__rl": true,
+          "value": "WiZqyki2rchtU7ST",
+          "mode": "list",
+          "cachedResultName": "Email Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        1664,
+        208
+      ],
+      "id": "97ca0c02-a4f7-40f8-ae65-eb9a03588401",
+      "name": "emailAgent"
+    },
+    {
+      "parameters": {
+        "description": "Call this tool for any calendar action ",
+        "workflowId": {
+          "__rl": true,
+          "value": "9tTdpHEftofycQhH",
+          "mode": "list",
+          "cachedResultName": "Calender Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1792,
+        208
+      ],
+      "id": "fececb42-acca-42cc-bc61-0a993daf1998",
+      "name": "calendarAgent"
+    },
+    {
+      "parameters": {
+        "description": "Call this tool for any expenses related action ",
+        "workflowId": {
+          "__rl": true,
+          "value": "wAX6IWgEBVN3sGEa",
+          "mode": "list",
+          "cachedResultName": "Database"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1920,
+        208
+      ],
+      "id": "0adebd7d-db3a-4518-ab5a-8a57a24f86de",
+      "name": "ExpensesAgent"
+    },
+    {
+      "parameters": {
+        "description": "Call this tool for any Tasks related action ",
+        "workflowId": {
+          "__rl": true,
+          "value": "c4BpSPnKaHYvUiM1",
+          "mode": "list",
+          "cachedResultName": "TO DO Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        2048,
+        208
+      ],
+      "id": "68b8696f-5aae-4715-a9cf-256866bc464e",
+      "name": "ToDOAgent"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Ultimate Assistant": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set 'Text'": {
+      "main": [
+        [
+          {
+            "node": "Ultimate Assistant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Set 'Text'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Ultimate Assistant",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "emailAgent": {
+      "ai_tool": [
+        [
+          {
+            "node": "Ultimate Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "calendarAgent": {
+      "ai_tool": [
+        [
+          {
+            "node": "Ultimate Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ExpensesAgent": {
+      "ai_tool": [
+        [
+          {
+            "node": "Ultimate Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ToDOAgent": {
+      "ai_tool": [
+        [
+          {
+            "node": "Ultimate Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4f8b7c1f-8178-4ca2-9d82-0d92fbeda8b9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a58a6fa948a6ca442d3dbc5e49c9b5652ab1032d339aa22745673465fd625012"
+  },
+  "id": "AC8AnLA89BClkXBM",
+  "tags": [
+    {
+      "createdAt": "2025-09-02T09:31:55.491Z",
+      "updatedAt": "2025-09-02T09:31:55.491Z",
+      "id": "2IJ5MKk1luQFbjjf",
+      "name": "Personal Assistant"
+    }
+  ]
+}

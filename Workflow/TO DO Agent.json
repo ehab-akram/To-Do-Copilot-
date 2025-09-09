@@ -1,0 +1,304 @@
+{
+  "name": "TO DO Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-20b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -608,
+        208
+      ],
+      "id": "aba4c0da-eb4d-4b0c-b8a1-c5ca17300f78",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "9w6U4Z3UY3yWKIay",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -832,
+        -16
+      ],
+      "id": "4a0d2c47-b103-49ca-b913-bc7304b0fc17",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "39c2f302-03be-4464-a17a-d7cc481d6d44",
+              "name": "=response",
+              "value": "={{$json.output}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5915a617-a5a4-4c05-a8c7-5c68797fbedf",
+      "name": "Success",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        112,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7ab380a2-a8d3-421c-ab4e-748ea8fb7904",
+              "name": "response",
+              "value": "Unable to perform task. Please try again.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "509c1cff-fae3-4f49-bf79-552272ac6240",
+      "name": "Try Again",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        112,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "=# System Prompt\n\n## Overview\nYou are a **task management assistant for Microsoft To Do**.  \n- All tasks must be created with **clear subjects, optional content, due dates, and reminders**.  \n- Your role is to route requests to the correct task management action.  \n\n---\n\n## Tools\n1. **Get Task** → Retrieve a single task by its ID.  \n\n2. **Create Task** → Create a new task.  \n   - **Required field:** `Subject`  \n   - **Additional fields:** `Content`, `Due`, `Reminder`  \n\n3. **Delete Task** → Delete a task (**requires** `Get Many Tasks` first to retrieve task ID).  \n\n4. **Get Many Tasks** → Retrieve multiple tasks. Supports filters:  \n     - `Limit`: Should not exceed 10\n\n---\n\n## Tool Execution Rules\n- **Create Task**: Execute Create Task tool → Return success message → STOP  \n- **Get Task**: Execute  Get Task tool → Return retrieved task → STOP  \n- **Delete Task**: Execute Get Many Tasks tool → Get task ID → Execute Delete Task → Return result → STOP  \n   - \n- **Get Many Tasks**: Execute Get Many Tasks tool → Return retrieved tasks → STOP  \n\n**NEVER execute multiple tools in sequence unless the user makes multiple separate requests.**\n\n---\n\n## Final Reminders\n- Current date/time: **{{ $now.setZone('Asia/Amman').toFormat(\"yyyy-MM-dd HH:mm:ss\") }}**  \n- Timezone: **Asia/Amman**  \n- Stay concise.  \n- Only take the **necessary routing action**.\n",
+          "maxIterations": 5,
+          "returnIntermediateSteps": false,
+          "passthroughBinaryImages": false
+        }
+      },
+      "id": "422c1185-87d6-41f9-8412-fde70879df4d",
+      "name": "TO DO Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        -424,
+        -16
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "taskListId": "AQMkADAwATNiZmYAZS05YjY2AC1iMWIxLTAwAi0wMAoALgAAA3DgWiuWIcFFhJFLck7ELZgBAH4FWv7Tw_lPtVj0b0a9_xoAAAIBEgAAAA==",
+        "taskId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Task_ID', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.microsoftToDoTool",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        208
+      ],
+      "id": "0b9af6c0-6edc-41df-ba9e-ee609b4f2ea9",
+      "name": "Delete Task",
+      "credentials": {
+        "microsoftToDoOAuth2Api": {
+          "id": "5tgpg2Wya0w0KRxn",
+          "name": "Microsoft To Do account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "taskListId": "AQMkADAwATNiZmYAZS05YjY2AC1iMWIxLTAwAi0wMAoALgAAA3DgWiuWIcFFhJFLck7ELZgBAH4FWv7Tw_lPtVj0b0a9_xoAAAIBEgAAAA==",
+        "title": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "additionalFields": {
+          "content": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Content', ``, 'string') }}",
+          "dueDateTime": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Due', ``, 'string') }}",
+          "reminderDateTime": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Reminder', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.microsoftToDoTool",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        208
+      ],
+      "id": "122e521d-bbb9-443f-9021-e38878c8514b",
+      "name": "Create Task",
+      "credentials": {
+        "microsoftToDoOAuth2Api": {
+          "id": "5tgpg2Wya0w0KRxn",
+          "name": "Microsoft To Do account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "taskListId": "AQMkADAwATNiZmYAZS05YjY2AC1iMWIxLTAwAi0wMAoALgAAA3DgWiuWIcFFhJFLck7ELZgBAH4FWv7Tw_lPtVj0b0a9_xoAAAIBEgAAAA==",
+        "limit": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Limit', ``, 'number') }}"
+      },
+      "type": "n8n-nodes-base.microsoftToDoTool",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        208
+      ],
+      "id": "7da50593-3808-45a3-92cb-429b0c1dff25",
+      "name": "Get many Tasks",
+      "credentials": {
+        "microsoftToDoOAuth2Api": {
+          "id": "5tgpg2Wya0w0KRxn",
+          "name": "Microsoft To Do account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "taskListId": "AQMkADAwATNiZmYAZS05YjY2AC1iMWIxLTAwAi0wMAoALgAAA3DgWiuWIcFFhJFLck7ELZgBAH4FWv7Tw_lPtVj0b0a9_xoAAAIBEgAAAA==",
+        "taskId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Task_ID', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.microsoftToDoTool",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        208
+      ],
+      "id": "2bbcc18e-9d12-492c-9452-7c4901fae220",
+      "name": "Get Task",
+      "credentials": {
+        "microsoftToDoOAuth2Api": {
+          "id": "5tgpg2Wya0w0KRxn",
+          "name": "Microsoft To Do account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {}
+      }
+    ]
+  },
+  "connections": {
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "TO DO Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "TO DO Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TO DO Agent": {
+      "main": [
+        [
+          {
+            "node": "Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Try Again",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Task": {
+      "ai_tool": [
+        [
+          {
+            "node": "TO DO Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Task": {
+      "ai_tool": [
+        [
+          {
+            "node": "TO DO Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many Tasks": {
+      "ai_tool": [
+        [
+          {
+            "node": "TO DO Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Task": {
+      "ai_tool": [
+        [
+          {
+            "node": "TO DO Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "76672195-8d9f-494c-a621-eaf9c9df129a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a58a6fa948a6ca442d3dbc5e49c9b5652ab1032d339aa22745673465fd625012"
+  },
+  "id": "c4BpSPnKaHYvUiM1",
+  "tags": [
+    {
+      "createdAt": "2025-09-02T09:31:55.491Z",
+      "updatedAt": "2025-09-02T09:31:55.491Z",
+      "id": "2IJ5MKk1luQFbjjf",
+      "name": "Personal Assistant"
+    }
+  ]
+}

@@ -1,0 +1,317 @@
+{
+  "name": "Email Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7ab380a2-a8d3-421c-ab4e-748ea8fb7904",
+              "name": "response",
+              "value": "Unable to perform task. Please try again.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cb280eba-15d6-4885-bdca-ca44f14fa51f",
+      "name": "Try Again",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        80,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "39c2f302-03be-4464-a17a-d7cc481d6d44",
+              "name": "=response",
+              "value": "={{$json.output}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0b529286-a50f-464d-9e55-f43b9bc9895e",
+      "name": "Success",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        80,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "=# System Prompt\n\n## Overview\nYou are an **email management assistant**.  \n- All emails must be written in **professional HTML**.  \n- Always sign off emails as **\"Nate.\"**  \n- Your role is to route requests to the correct tool.  \n\n---\n\n## Tools\n- **Send Email** → Send a new email.  \n- **Create Draft** → Create an email draft.  \n- **Get Emails** → Retrieve emails. Supports filters:  \n  - `Received After`  \n  - `Received Before`  \n  - `Sender`   \n- **Mark Unread** → Mark an email as unread (**requires** `Get Emails` first for message ID).  \n\n- **Mark Read** → Mark an email as read (**requires** `Get Emails` first for message ID).  \n---\n## Tool Execution Rules\n- **Send Email**: Execute Send Email tool → Return success message → STOP\n- **Create Draft**: Execute Create Draft tool → Return retrieved data → STOP  \n- **Mark Unread**: Execute Get Emails tool  → Get record ID  → Mark unread → Return result → STOP\n- **Mark Read**:Execute Get Emails tool  → Get record ID  → Mark read →  Return success message → STOP\n\n**NEVER execute multiple tools in sequence unless the user makes multiple separate requests.**\n\n## Final Reminders\n- Current date/time: **{{ $now.setZone('Asia/Amman').toFormat(\"yyyy-MM-dd HH:mm:ss\") }}**  \n- Timezone: **Asia/Amman**  \n- Stay concise.  \n- Only take the **necessary routing action**.  \n",
+          "maxIterations": 7,
+          "returnIntermediateSteps": false,
+          "passthroughBinaryImages": false
+        }
+      },
+      "id": "291dc3c5-2ad8-41dd-aada-9ebe08c994fe",
+      "name": "Email Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        -456,
+        64
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": "=5",
+        "simple": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Simplify', ``, 'boolean') }}",
+        "filters": {
+          "receivedAfter": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Received_After', ``, 'string') }}",
+          "receivedBefore": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Received_Before', ``, 'string') }}",
+          "sender": "={{ $fromAI(\"sender\",\"who the emails are from\") }}"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        -512,
+        288
+      ],
+      "id": "18b2d8f2-babc-4499-a1b6-94bc60807bdb",
+      "name": "Get Emails",
+      "webhookId": "af4b3298-9037-44b0-aa12-2acbfbb5e66f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9AegoNhaOxSRbKt8",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $fromAI(\"subject\") }}",
+        "emailType": "html",
+        "message": "={{ $fromAI(\"emailBody\") }}",
+        "options": {
+          "sendTo": "={{ $fromAI(\"emailAddress\") }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        -384,
+        288
+      ],
+      "id": "5c35375e-fd71-423c-84d5-68aa66706e33",
+      "name": "Create Draft",
+      "webhookId": "17016bce-d7d7-428a-a56c-f6ea122db8be",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9AegoNhaOxSRbKt8",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "markAsUnread",
+        "messageId": "={{ $fromAI(\"messageID\") }}"
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        -256,
+        288
+      ],
+      "id": "50d0428f-8691-4739-ab50-253a9cd06f8f",
+      "name": "Mark Unread",
+      "webhookId": "a35af9d8-f67d-4ff9-803f-59ec6356e795",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9AegoNhaOxSRbKt8",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -864,
+        64
+      ],
+      "id": "faa51797-a14d-4a9c-94fe-91fd22a5a229",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-20b",
+        "options": {
+          "maxTokensToSample": 4096,
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        288
+      ],
+      "id": "a23badc2-fe83-4a64-aaef-e7f138c8bcd7",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "9w6U4Z3UY3yWKIay",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "markAsRead",
+        "messageId": "={{ $fromAI(\"messageID\") }}"
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        -128,
+        288
+      ],
+      "id": "45d50a03-c014-4f7a-9a9e-006a50cfcb26",
+      "name": "Mark read",
+      "webhookId": "a35af9d8-f67d-4ff9-803f-59ec6356e795",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9AegoNhaOxSRbKt8",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "query": "plz Mark today emails as read"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Email Agent": {
+      "main": [
+        [
+          {
+            "node": "Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Try Again",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Emails": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Draft": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Unread": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark read": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b1d5d338-a74b-45a7-88c5-f28773b3142e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a58a6fa948a6ca442d3dbc5e49c9b5652ab1032d339aa22745673465fd625012"
+  },
+  "id": "WiZqyki2rchtU7ST",
+  "tags": [
+    {
+      "createdAt": "2025-09-02T09:31:55.491Z",
+      "updatedAt": "2025-09-02T09:31:55.491Z",
+      "id": "2IJ5MKk1luQFbjjf",
+      "name": "Personal Assistant"
+    }
+  ]
+}

@@ -1,0 +1,373 @@
+{
+  "name": "Calender Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7ab380a2-a8d3-421c-ab4e-748ea8fb7904",
+              "name": "response",
+              "value": "Unable to perform task. Please try again.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "293b0659-4583-4594-acef-d544f807a245",
+      "name": "Try Again",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        112,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "39c2f302-03be-4464-a17a-d7cc481d6d44",
+              "name": "=response",
+              "value": "={{$json.output}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1341e668-67df-44ec-8831-fea8288f77c5",
+      "name": "Success",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        112,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "=## Overview\nYou are a **calendar assistant**.  \n- Manage events by creating, retrieving, updating, or deleting them.  \n- Always choose the correct tool based on the user’s request.  \n\n---\n\n## Tools\n- **Create Event with Attendee** → For events with participants.  \n- **Create Event** → For solo events.  \n- **Get Events** → Fetch calendar schedules.  \n- **Delete Event** → Delete an event (**requires** `Get Events` first for event ID).  \n- **Update Event** → Update an event (**requires** `Get Events` first for event ID).  \n\n---\n\n## Tool Execution Rules\n- **CREATE EVENT / CREATE EVENT WITH ATTENDEE**: Execute create tool → Return success message → STOP  \n- **GET EVENTS**: Execute get tool → Return retrieved events → STOP  \n\n- **UPDATE EVENT**:Execute get tool → Get event ID first → Update → Return result → STOP  \n\n- **DELETE EVENT**: Execute get tool → Get event ID first → Delete → Return result → STOP  \n\n**NEVER execute multiple tools in sequence unless the user makes multiple separate requests.**  \n\n\n## Final Notes\n- Current date/time: **{{ $now.setZone('Asia/Amman').toFormat(\"yyyy-MM-dd HH:mm:ss\") }}**  \n- Timezone: **Asia/Amman**  \n- If no duration is provided, assume **1 hour**.  \n- Keep responses concise and only take the **necessary action**.  \n- After calling a tool, **stop immediately and return the tool’s output**  \n- Do **not** call another tool unless the user explicitly requests it again\n\n\n## CRITICAL INSTRUCTION\n- Execute **ONLY ONE TOOL** per user request  \n- After creating an event, do NOT retrieve it unless explicitly asked  \n- After any tool execution, respond with the result and STOP  \n- Do NOT chain multiple tool calls automatically",
+          "maxIterations": 5,
+          "returnIntermediateSteps": true,
+          "passthroughBinaryImages": false
+        }
+      },
+      "id": "57b08393-cbcc-420f-8054-09d2be7288b4",
+      "name": "Calendar Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        -488,
+        96
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "ehab.alawawdeh.ai@gmail.com",
+          "mode": "list",
+          "cachedResultName": "ehab.alawawdeh.ai@gmail.com"
+        },
+        "start": "={{ $fromAI(\"eventStart\") }}",
+        "end": "={{ $fromAI(\"eventEnd\") }}",
+        "additionalFields": {
+          "attendees": [
+            "={{ $fromAI(\"eventAttendeeEmail\") }}"
+          ],
+          "summary": "={{ $fromAI(\"eventTitle\") }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -608,
+        320
+      ],
+      "id": "17006d77-06e0-4729-a150-5a41dc22fedd",
+      "name": "Create Event with Attendee",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "Q04qcbQcWUbxeHAq",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "ehab.alawawdeh.ai@gmail.com",
+          "mode": "list",
+          "cachedResultName": "ehab.alawawdeh.ai@gmail.com"
+        },
+        "start": "={{ $fromAI(\"eventStart\") }}",
+        "end": "={{ $fromAI(\"eventEnd\") }}",
+        "additionalFields": {
+          "attendees": [],
+          "summary": "={{ $fromAI(\"eventTitle\") }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -480,
+        320
+      ],
+      "id": "32d8e79c-fb0a-46a2-a5ca-efda4693d89a",
+      "name": "Create Event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "Q04qcbQcWUbxeHAq",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "ehab.alawawdeh.ai@gmail.com",
+          "mode": "list",
+          "cachedResultName": "ehab.alawawdeh.ai@gmail.com"
+        },
+        "returnAll": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Return_All', ``, 'boolean') }}",
+        "timeMin": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('After', `the day before the date the user requested`, 'string') }}",
+        "timeMax": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Before', `the day after the date the user requested`, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -352,
+        320
+      ],
+      "id": "4b1abc8f-9da6-49e9-a75e-511919aaf01c",
+      "name": "Get Events",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "Q04qcbQcWUbxeHAq",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "ehab.alawawdeh.ai@gmail.com",
+          "mode": "list",
+          "cachedResultName": "ehab.alawawdeh.ai@gmail.com"
+        },
+        "eventId": "={{ $fromAI(\"eventID\") }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -224,
+        320
+      ],
+      "id": "1c55d078-a114-49e2-bbd5-eba9a4cf49e1",
+      "name": "Delete Event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "Q04qcbQcWUbxeHAq",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "calendar": {
+          "__rl": true,
+          "value": "ehab.alawawdeh.ai@gmail.com",
+          "mode": "list",
+          "cachedResultName": "ehab.alawawdeh.ai@gmail.com"
+        },
+        "eventId": "={{ $fromAI(\"eventID\") }}",
+        "useDefaultReminders": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Use_Default_Reminders', ``, 'boolean') }}",
+        "updateFields": {
+          "end": "={{ $fromAI(\"endTime\") }}",
+          "start": "={{ $fromAI(\"startTime\") }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -96,
+        320
+      ],
+      "id": "451997e8-af46-49f4-a3a2-cd8738afab69",
+      "name": "Update Event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "Q04qcbQcWUbxeHAq",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -960,
+        96
+      ],
+      "id": "a844ce88-dbbc-4425-aed4-650dba65e64e",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-20b",
+        "options": {
+          "maxTokensToSample": 4096,
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -768,
+        320
+      ],
+      "id": "27e94252-ef0e-49a1-8f6f-ea7eada03d92",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "9w6U4Z3UY3yWKIay",
+          "name": "Groq account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Calendar Agent": {
+      "main": [
+        [
+          {
+            "node": "Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Try Again",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Event with Attendee": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Event": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Events": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Event": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Event": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "76947436-c9b9-44d2-9410-a10b70bcd0b7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a58a6fa948a6ca442d3dbc5e49c9b5652ab1032d339aa22745673465fd625012"
+  },
+  "id": "9tTdpHEftofycQhH",
+  "tags": [
+    {
+      "createdAt": "2025-09-02T09:31:55.491Z",
+      "updatedAt": "2025-09-02T09:31:55.491Z",
+      "id": "2IJ5MKk1luQFbjjf",
+      "name": "Personal Assistant"
+    }
+  ]
+}
